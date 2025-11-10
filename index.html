@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Islamic Prayer Times</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Tajawal:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Tajawal', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            transition: font-family 0.3s ease, direction 0.3s ease;
+        }
+        body[dir="ltr"] {
+            font-family: 'Roboto', sans-serif;
+        }
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #4CAF50;
+        }
+        .date-container {
+            font-size: 1.1em;
+            margin-bottom: 8px;
+        }
+        .gregorian-date, .hijri-date {
+            display: inline-block;
+            margin: 0 8px;
+            background: rgba(76, 175, 80, 0.2);
+            padding: 4px 12px;
+            border-radius: 15px;
+            border: 1px solid #4CAF50;
+        }
+        .current-time {
+            font-size: 1.4em;
+            margin-top: 8px;
+            color: #FFD700;
+            font-weight: 700;
+        }
+        .location-status {
+            font-size: 0.8em;
+            margin-top: 4px;
+            color: #FFD700;
+            opacity: 0.8;
+        }
+        .main-content {
+            flex: 1;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .sunrise-sunset {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 0.95em;
+            color: #FFD700;
+        }
+        .prayer-times {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 15px 0;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        .prayer-time {
+            display: flex;
+            justify-content: space-between;
+            margin: 12px 0;
+            font-size: 1em;
+            font-weight: 700;
+        }
+        body[dir="rtl"] .prayer-time {
+            text-align: right;
+        }
+        body[dir="ltr"] .prayer-time {
+            text-align: left;
+        }
+        .prayer-name {
+            color: #FFD700;
+        }
+        .prayer-time-value {
+            color: #4CAF50;
+        }
+        .action-buttons {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-around;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+            width: 100%;
+            max-width: 400px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding: 0 10px;
+        }
+        .action-btn {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 1.3em;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
+        }
+        .action-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .gps-btn { background: #2196F3; }
+        .ip-btn { background: #FF9800; }
+        .notification-btn { background: #FFD700; color: #000; }
+        .settings-btn { background: #4CAF50; }
+        .stop-adhan-btn { background: #f44336; display: none; }
+        .stop-adhan-btn.show { display: flex; }
+        .footer {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 12px;
+            text-align: center;
+            border-top: 2px solid #4CAF50;
+            display: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+        .modal-content {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            margin: 5% auto;
+            padding: 25px;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 1px solid #4CAF50;
+            direction: rtl;
+            text-align: right;
+        }
+        body[dir="ltr"] .modal-content {
+            direction: ltr;
+            text-align: left;
+        }
+        .close {
+            color: #aaa;
+            float: left;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        body[dir="ltr"] .close {
+            float: right;
+        }
+        .close:hover {
+            color: #4CAF50;
+        }
+        .setting-group {
+            margin: 15px 0;
+        }
+        .setting-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 700;
+            color: #FFD700;
+        }
+        .setting-group select {
+            width: 100%;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #4CAF50;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        .save-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            font-size: 1em;
+        }
+        .save-btn:hover {
+            background: #45a049;
+        }
+        .islamic-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            pointer-events: none;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="islamic" patternUnits="userSpaceOnUse" width="100" height="100"><circle cx="50" cy="50" r="2" fill="%234CAF50"/></pattern></defs><rect width="100" height="100" fill="url(%23islamic)"/></svg>');
+            z-index: -1;
+        }
+        @media (max-width: 768px) {
+            .header { padding: 10px; }
+            .date-container { font-size: 1em; }
+            .current-time { font-size: 1.2em; }
+            .prayer-times { 
+                padding: 20px; 
+                margin: 10px 0; 
+                max-width: 100%; 
+                font-size: 1.3em; 
+            }
+            .prayer-time { 
+                font-size: 1.4em; 
+                margin: 18px 0; 
+                padding: 8px 0; 
+            }
+            .action-buttons {
+                justify-content: space-around;
+                gap: 8px;
+                padding: 0 5px;
+            }
+            .action-btn {
+                width: 48px;
+                height: 48px;
+                font-size: 1.1em;
+            }
+            .modal-content { margin: 2% auto; padding: 20px; width: 98%; }
+        }
+        @media (max-width: 480px) {
+            .main-content { padding: 8px; }
+            .prayer-times { 
+                padding: 15px; 
+                border-radius: 20px; 
+                font-size: 1.25em; 
+            }
+            .prayer-time { 
+                margin: 15px 0; 
+                font-size: 1.35em; 
+            }
+            .action-buttons {
+                gap: 6px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                justify-content: space-around;
+            }
+            .action-btn {
+                width: 44px;
+                height: 44px;
+                font-size: 1em;
+            }
+            .sunrise-sunset {
+                font-size: 0.85em;
+            }
+            .header {
+                padding: 8px;
+            }
+        }
+        @media (max-width: 360px) {
+            .action-buttons {
+                justify-content: space-around;
+                gap: 4px;
+            }
+            .action-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="islamic-pattern"></div>
+    
+    <header class="header">
+        <div class="date-container">
+            <span class="gregorian-date" id="gregorian"></span>
+            <span class="hijri-date" id="hijri"></span>
+        </div>
+        <div class="current-time" id="currentTime">00:00:00</div>
+        <div class="location-status" id="locationStatus">Location: Not specified</div>
+    </header>
+
+    <main class="main-content">
+        <div class="sunrise-sunset">
+            <div id="sunrise">Sunrise: 00:00</div>
+            <div id="sunset">Sunset: 00:00</div>
+        </div>
+        
+        <div class="prayer-times">
+            <div class="prayer-time">
+                <span class="prayer-name" id="fajrLabel">Fajr:</span>
+                <span class="prayer-time-value" id="fajr">00:00</span>
+            </div>
+            <div class="prayer-time">
+                <span class="prayer-name" id="dhuhrLabel">Dhuhr:</span>
+                <span class="prayer-time-value" id="dhuhr">00:00</span>
+            </div>
+            <div class="prayer-time">
+                <span class="prayer-name" id="asrLabel">Asr:</span>
+                <span class="prayer-time-value" id="asr">00:00</span>
+            </div>
+            <div class="prayer-time">
+                <span class="prayer-name" id="maghribLabel">Maghrib:</span>
+                <span class="prayer-time-value" id="maghrib">00:00</span>
+            </div>
+            <div class="prayer-time">
+                <span class="prayer-name" id="ishaLabel">Isha:</span>
+                <span class="prayer-time-value" id="isha">00:00</span>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="action-btn gps-btn" id="locationBtn" onclick="getCurrentLocation()" title="GPS">
+                <i class="fas fa-location-arrow"></i>
+            </button>
+            <button class="action-btn ip-btn" id="ipLocationBtn" onclick="getIPLocation()" title="Via IP">
+                <i class="fas fa-globe"></i>
+            </button>
+            <button class="action-btn notification-btn" id="notificationToggle" onclick="toggleNotifications()" title="Adhan Notifications">
+                <i class="fas fa-bell"></i>
+            </button>
+            <button class="action-btn settings-btn" onclick="openSettings()" title="Settings">
+                <i class="fas fa-cog"></i>
+            </button>
+            <button class="action-btn stop-adhan-btn" id="stopAdhanBtn" onclick="pauseAdhan()" title="Stop Adhan">
+                <i class="fas fa-stop"></i>
+            </button>
+        </div>
+    </main>
+
+    <footer class="footer">
+    </footer>
+
+    <!-- Audio Elements for Adhan - Now Local Files -->
+    <audio id="adhanAudio" preload="auto">
+        <source src="adhan1.mp3" type="audio/mpeg"> <!-- Default Adhan -->
+        <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.wav" type="audio/wav"> <!-- Fallback -->
+        The browser does not support audio playback.
+    </audio>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeSettings()">&times;</span>
+            <h2 id="settingsTitle" style="text-align: center; color: #FFD700; margin-bottom: 15px;">Settings</h2>
+            
+            <div class="setting-group">
+                <label for="autoLocation" id="autoLocationLabel">Use Auto Location:</label>
+                <input type="checkbox" id="autoLocation" onchange="toggleAutoLocation()">
+            </div>
+            
+            <div class="setting-group">
+                <label for="city" id="cityLabel">City:</label>
+                <select id="city" onchange="updateCitySettings()">
+                    <optgroup id="egyptGroup" label="Egypt">
+                        <option value="Cairo_Egypt" data-country="Egypt" data-method="2" data-ar="القاهرة" data-en="Cairo">Cairo</option>
+                        <option value="Alexandria_Egypt" data-country="Egypt" data-method="2" data-ar="الإسكندرية" data-en="Alexandria">Alexandria</option>
+                        <option value="Giza_Egypt" data-country="Egypt" data-method="2" data-ar="الجيزة" data-en="Giza">Giza</option>
+                    </optgroup>
+                    <optgroup id="saudiGroup" label="Saudi Arabia">
+                        <option value="Riyadh_Saudi Arabia" data-country="Saudi Arabia" data-method="3" data-ar="الرياض" data-en="Riyadh">Riyadh</option>
+                        <option value="Jeddah_Saudi Arabia" data-country="Saudi Arabia" data-method="3" data-ar="جدة" data-en="Jeddah">Jeddah</option>
+                        <option value="Makkah_Saudi Arabia" data-country="Saudi Arabia" data-method="3" data-ar="مكة المكرمة" data-en="Makkah">Makkah</option>
+                        <option value="Medina_Saudi Arabia" data-country="Saudi Arabia" data-method="3" data-ar="المدينة المنورة" data-en="Medina">Medina</option>
+                        <option value="Dammam_Saudi Arabia" data-country="Saudi Arabia" data-method="3" data-ar="الدمام" data-en="Dammam">Dammam</option>
+                    </optgroup>
+                    <optgroup id="uaeGroup" label="United Arab Emirates">
+                        <option value="Dubai_United Arab Emirates" data-country="United Arab Emirates" data-method="4" data-ar="دبي" data-en="Dubai">Dubai</option>
+                        <option value="Abu Dhabi_United Arab Emirates" data-country="United Arab Emirates" data-method="4" data-ar="أبو ظبي" data-en="Abu Dhabi">Abu Dhabi</option>
+                        <option value="Sharjah_United Arab Emirates" data-country="United Arab Emirates" data-method="4" data-ar="الشارقة" data-en="Sharjah">Sharjah</option>
+                    </optgroup>
+                    <optgroup id="iraqGroup" label="Iraq">
+                        <option value="Baghdad_Iraq" data-country="Iraq" data-method="0" data-ar="بغداد" data-en="Baghdad">Baghdad</option>
+                        <option value="Basra_Iraq" data-country="Iraq" data-method="0" data-ar="البصرة" data-en="Basra">Basra</option>
+                        <option value="Mosul_Iraq" data-country="Iraq" data-method="0" data-ar="الموصل" data-en="Mosul">Mosul</option>
+                    </optgroup>
+                    <optgroup id="jordanGroup" label="Jordan">
+                        <option value="Amman_Jordan" data-country="Jordan" data-method="0" data-ar="عمان" data-en="Amman">Amman</option>
+                        <option value="Zarqa_Jordan" data-country="Jordan" data-method="0" data-ar="الزرقاء" data-en="Zarqa">Zarqa</option>
+                    </optgroup>
+                    <optgroup id="moroccoGroup" label="Morocco">
+                        <option value="Casablanca_Morocco" data-country="Morocco" data-method="0" data-ar="الدار البيضاء" data-en="Casablanca">Casablanca</option>
+                        <option value="Rabat_Morocco" data-country="Morocco" data-method="0" data-ar="الرباط" data-en="Rabat">Rabat</option>
+                        <option value="Fez_Morocco" data-country="Morocco" data-method="0" data-ar="فاس" data-en="Fez">Fez</option>
+                    </optgroup>
+                    <optgroup id="algeriaGroup" label="Algeria">
+                        <option value="Algiers_Algeria" data-country="Algeria" data-method="0" data-ar="الجزائر العاصمة" data-en="Algiers">Algiers</option>
+                        <option value="Oran_Algeria" data-country="Algeria" data-method="0" data-ar="وهران" data-en="Oran">Oran</option>
+                    </optgroup>
+                    <optgroup id="kuwaitGroup" label="Kuwait">
+                        <option value="Kuwait City_Kuwait" data-country="Kuwait" data-method="7" data-ar="مدينة الكويت" data-en="Kuwait City">Kuwait City</option>
+                        <option value="Hawalli_Kuwait" data-country="Kuwait" data-method="7" data-ar="حولي" data-en="Hawalli">Hawalli</option>
+                    </optgroup>
+                    <optgroup id="lebanonGroup" label="Lebanon">
+                        <option value="Beirut_Lebanon" data-country="Lebanon" data-method="0" data-ar="بيروت" data-en="Beirut">Beirut</option>
+                        <option value="Tripoli_Lebanon" data-country="Lebanon" data-method="0" data-ar="طرابلس" data-en="Tripoli">Tripoli</option>
+                    </optgroup>
+                    <optgroup id="syriaGroup" label="Syria">
+                        <option value="Damascus_Syria" data-country="Syria" data-method="0" data-ar="دمشق" data-en="Damascus">Damascus</option>
+                        <option value="Aleppo_Syria" data-country="Syria" data-method="0" data-ar="حلب" data-en="Aleppo">Aleppo</option>
+                        <option value="Homs_Syria" data-country="Syria" data-method="0" data-ar="حمص" data-en="Homs">Homs</option>
+                    </optgroup>
+                    <optgroup id="tunisiaGroup" label="Tunisia">
+                        <option value="Tunis_Tunisia" data-country="Tunisia" data-method="0" data-ar="تونس" data-en="Tunis">Tunis</option>
+                        <option value="Sfax_Tunisia" data-country="Tunisia" data-method="0" data-ar="صفاقس" data-en="Sfax">Sfax</option>
+                    </optgroup>
+                    <optgroup id="sudanGroup" label="Sudan">
+                        <option value="Khartoum_Sudan" data-country="Sudan" data-method="0" data-ar="الخرطوم" data-en="Khartoum">Khartoum</option>
+                        <option value="Omdurman_Sudan" data-country="Sudan" data-method="0" data-ar="أم درمان" data-en="Omdurman">Omdurman</option>
+                    </optgroup>
+                    <optgroup id="palestineGroup" label="Palestine">
+                        <option value="Jerusalem_Palestine" data-country="Palestine" data-method="0" data-ar="القدس" data-en="Jerusalem">Jerusalem</option>
+                        <option value="Gaza_Palestine" data-country="Palestine" data-method="0" data-ar="غزة" data-en="Gaza">Gaza</option>
+                    </optgroup>
+                    <optgroup id="qatarGroup" label="Qatar">
+                        <option value="Doha_Qatar" data-country="Qatar" data-method="8" data-ar="الدوحة" data-en="Doha">Doha</option>
+                    </optgroup>
+                    <optgroup id="omanGroup" label="Oman">
+                        <option value="Muscat_Oman" data-country="Oman" data-method="0" data-ar="مسقط" data-en="Muscat">Muscat</option>
+                        <option value="Salalah_Oman" data-country="Oman" data-method="0" data-ar="صلالة" data-en="Salalah">Salalah</option>
+                    </optgroup>
+                    <optgroup id="bahrainGroup" label="Bahrain">
+                        <option value="Manama_Bahrain" data-country="Bahrain" data-method="0" data-ar="المنامة" data-en="Manama">Manama</option>
+                    </optgroup>
+                    <optgroup id="libyaGroup" label="Libya">
+                        <option value="Tripoli_Libya" data-country="Libya" data-method="0" data-ar="طرابلس" data-en="Tripoli">Tripoli</option>
+                        <option value="Benghazi_Libya" data-country="Libya" data-method="0" data-ar="بنغازي" data-en="Benghazi">Benghazi</option>
+                    </optgroup>
+                    <optgroup id="yemenGroup" label="Yemen">
+                        <option value="Sanaa_Yemen" data-country="Yemen" data-method="0" data-ar="صنعاء" data-en="Sanaa">Sanaa</option>
+                        <option value="Aden_Yemen" data-country="Yemen" data-method="0" data-ar="عدن" data-en="Aden">Aden</option>
+                    </optgroup>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="method" id="methodLabel">Calculation Method:</label>
+                <select id="method">
+                    <option value="0">Muslim World League (Default)</option>
+                    <option value="1">Islamic Society of North America</option>
+                    <option value="2">Egyptian General Authority</option>
+                    <option value="3">Umm Al-Qura (Saudi Arabia)</option>
+                    <option value="4">Gulf Region</option>
+                    <option value="5">Egyptian General Authority (Main)</option>
+                    <option value="6">Islamic Society of North America (ISNA)</option>
+                    <option value="7">Kuwait</option>
+                    <option value="8">Qatar</option>
+                    <option value="9">Singapore</option>
+                    <option value="10">France</option>
+                    <option value="11">Turkey</option>
+                    <option value="12">Russia</option>
+                    <option value="13">Mauritania</option>
+                    <option value="14">Malaysia</option>
+                    <option value="15">FATA</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="language" id="languageLabel">Language:</label>
+                <select id="language" onchange="changeLanguage()">
+                    <option value="ar">العربية</option>
+                    <option value="en">English</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="adhan" id="adhanLabel">Adhan Type:</label>
+                <select id="adhan">
+                    <option value="default">Default (General Adhan)</option>
+                    <option value="bilal">Bilal (Traditional Adhan)</option>
+                    <option value="muezzin">Muezzin (Haram Adhan)</option>
+                </select>
+            </div>
+
+            <div class="setting-group">
+                <label for="notificationTime" id="notificationTimeLabel">Notification Time Before Prayer (Minutes):</label>
+                <select id="notificationTime">
+                    <option value="1">1 Minute</option>
+                    <option value="2" selected>2 Minutes</option>
+                    <option value="5">5 Minutes</option>
+                </select>
+            </div>
+            
+            <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save</button>
+        </div>
+    </div>
+
+    <script>
+        // Translations
+        const translations = {
+            ar: {
+                title: 'أوقات الصلاة الإسلامية',
+                gregorian: 'التاريخ الميلادي',
+                hijri: 'التاريخ الهجري',
+                currentTime: 'الوقت الحالي',
+                locationStatus: 'الموقع: ',
+                sunrise: 'الشروق: ',
+                sunset: 'الغروب: ',
+                fajr: 'الفجر:',
+                dhuhr: 'الظهر:',
+                asr: 'العصر:',
+                maghrib: 'المغرب:',
+                isha: 'العشاء:',
+                settingsTitle: 'الإعدادات',
+                autoLocationLabel: 'استخدام الموقع التلقائي:',
+                cityLabel: 'المدينة:',
+                methodLabel: 'طريقة الحساب:',
+                method0: 'رابطة العالم الإسلامي (افتراضي)',
+                method1: 'المجلس الإسلامي الأمريكي الشمالي',
+                method2: 'مصر العامة',
+                method3: 'أم القرى (السعودية)',
+                method4: 'الخليج العربي',
+                method5: 'مصر الرئيسية',
+                method6: 'المجلس الإسلامي الأمريكي الشمالي (ISNA)',
+                method7: 'الكويت',
+                method8: 'قطر',
+                method9: 'سنغافورة',
+                method10: 'فرنسا',
+                method11: 'تركيا',
+                method12: 'روسيا',
+                method13: 'موريتانيا',
+                method14: 'ماليزيا',
+                method15: 'FATA',
+                languageLabel: 'اللغة:',
+                arLang: 'العربية',
+                enLang: 'English',
+                adhanLabel: 'نوع الأذان:',
+                adhanDefault: 'افتراضي (أذان عام)',
+                adhanBilal: 'بلال (أذان تقليدي)',
+                adhanMuezzin: 'مؤذن (أذان الحرم)',
+                notificationTimeLabel: 'وقت الإشعار قبل الصلاة (دقائق):',
+                notif1: '1 دقيقة',
+                notif2: '2 دقائق',
+                notif5: '5 دقائق',
+                saveBtn: 'حفظ',
+                gpsTitle: 'GPS',
+                ipTitle: 'عبر IP',
+                notifTitle: 'إشعارات الأذان',
+                settingsTitleBtn: 'الإعدادات',
+                stopTitle: 'إيقاف الأذان',
+                notifMsg: 'وقت الصلاة - حان وقت الصلاة',
+                locationNotSet: 'الموقع: غير محدد',
+                gpsError: 'المتصفح لا يدعم GPS. جرب عبر IP.',
+                gpsFail: 'خطأ في GPS. جرب عبر IP.',
+                ipError: 'خطأ في تحديد الموقع عبر IP. تحقق من الاتصال.',
+                ipFail: 'فشل في الـ IP',
+                audioError: 'المتصفح لا يدعم تشغيل الصوت.'
+            },
+            en: {
+                title: 'Islamic Prayer Times',
+                gregorian: 'Gregorian Date',
+                hijri: 'Hijri Date',
+                currentTime: 'Current Time',
+                locationStatus: 'Location: ',
+                sunrise: 'Sunrise: ',
+                sunset: 'Sunset: ',
+                fajr: 'Fajr:',
+                dhuhr: 'Dhuhr:',
+                asr: 'Asr:',
+                maghrib: 'Maghrib:',
+                isha: 'Isha:',
+                settingsTitle: 'Settings',
+                autoLocationLabel: 'Use Auto Location:',
+                cityLabel: 'City:',
+                methodLabel: 'Calculation Method:',
+                method0: 'Muslim World League (Default)',
+                method1: 'Islamic Society of North America',
+                method2: 'Egyptian General Authority',
+                method3: 'Umm Al-Qura (Saudi Arabia)',
+                method4: 'Gulf Region',
+                method5: 'Egyptian General Authority (Main)',
+                method6: 'Islamic Society of North America (ISNA)',
+                method7: 'Kuwait',
+                method8: 'Qatar',
+                method9: 'Singapore',
+                method10: 'France',
+                method11: 'Turkey',
+                method12: 'Russia',
+                method13: 'Mauritania',
+                method14: 'Malaysia',
+                method15: 'FATA',
+                languageLabel: 'Language:',
+                arLang: 'العربية',
+                enLang: 'English',
+                adhanLabel: 'Adhan Type:',
+                adhanDefault: 'Default (General Adhan)',
+                adhanBilal: 'Bilal (Traditional Adhan)',
+                adhanMuezzin: 'Muezzin (Haram Adhan)',
+                notificationTimeLabel: 'Notification Time Before Prayer (Minutes):',
+                notif1: '1 Minute',
+                notif2: '2 Minutes',
+                notif5: '5 Minutes',
+                saveBtn: 'Save',
+                gpsTitle: 'GPS',
+                ipTitle: 'Via IP',
+                notifTitle: 'Adhan Notifications',
+                settingsTitleBtn: 'Settings',
+                stopTitle: 'Stop Adhan',
+                notifMsg: 'Prayer Time - It\'s time for prayer',
+                locationNotSet: 'Location: Not specified',
+                gpsError: 'Browser does not support GPS. Try via IP.',
+                gpsFail: 'GPS error. Try via IP.',
+                ipError: 'Error determining location via IP. Check connection.',
+                ipFail: 'IP failed',
+                audioError: 'The browser does not support audio playback.'
+            }
+        };
+
+        // Cities and their settings (unchanged)
+        const citySettings = {
+            'Cairo_Egypt': { country: 'Egypt', method: 2 },
+            'Alexandria_Egypt': { country: 'Egypt', method: 2 },
+            'Giza_Egypt': { country: 'Egypt', method: 2 },
+            'Riyadh_Saudi Arabia': { country: 'Saudi Arabia', method: 3 },
+            'Jeddah_Saudi Arabia': { country: 'Saudi Arabia', method: 3 },
+            'Makkah_Saudi Arabia': { country: 'Saudi Arabia', method: 3 },
+            'Medina_Saudi Arabia': { country: 'Saudi Arabia', method: 3 },
+            'Dammam_Saudi Arabia': { country: 'Saudi Arabia', method: 3 },
+            'Dubai_United Arab Emirates': { country: 'United Arab Emirates', method: 4 },
+            'Abu Dhabi_United Arab Emirates': { country: 'United Arab Emirates', method: 4 },
+            'Sharjah_United Arab Emirates': { country: 'United Arab Emirates', method: 4 },
+            'Baghdad_Iraq': { country: 'Iraq', method: 0 },
+            'Basra_Iraq': { country: 'Iraq', method: 0 },
+            'Mosul_Iraq': { country: 'Iraq', method: 0 },
+            'Amman_Jordan': { country: 'Jordan', method: 0 },
+            'Zarqa_Jordan': { country: 'Jordan', method: 0 },
+            'Casablanca_Morocco': { country: 'Morocco', method: 0 },
+            'Rabat_Morocco': { country: 'Morocco', method: 0 },
+            'Fez_Morocco': { country: 'Morocco', method: 0 },
+            'Algiers_Algeria': { country: 'Algeria', method: 0 },
+            'Oran_Algeria': { country: 'Algeria', method: 0 },
+            'Kuwait City_Kuwait': { country: 'Kuwait', method: 7 },
+            'Hawalli_Kuwait': { country: 'Kuwait', method: 7 },
+            'Beirut_Lebanon': { country: 'Lebanon', method: 0 },
+            'Tripoli_Lebanon': { country: 'Lebanon', method: 0 },
+            'Damascus_Syria': { country: 'Syria', method: 0 },
+            'Aleppo_Syria': { country: 'Syria', method: 0 },
+            'Homs_Syria': { country: 'Syria', method: 0 },
+            'Tunis_Tunisia': { country: 'Tunisia', method: 0 },
+            'Sfax_Tunisia': { country: 'Tunisia', method: 0 },
+            'Khartoum_Sudan': { country: 'Sudan', method: 0 },
+            'Omdurman_Sudan': { country: 'Sudan', method: 0 },
+            'Jerusalem_Palestine': { country: 'Palestine', method: 0 },
+            'Gaza_Palestine': { country: 'Palestine', method: 0 },
+            'Doha_Qatar': { country: 'Qatar', method: 8 },
+            'Muscat_Oman': { country: 'Oman', method: 0 },
+            'Salalah_Oman': { country: 'Oman', method: 0 },
+            'Manama_Bahrain': { country: 'Bahrain', method: 0 },
+            'Tripoli_Libya': { country: 'Libya', method: 0 },
+            'Benghazi_Libya': { country: 'Libya', method: 0 },
+            'Sanaa_Yemen': { country: 'Yemen', method: 0 },
+            'Aden_Yemen': { country: 'Yemen', method: 0 }
+        };
+
+        // Local Adhan audio files (place these MP3 files in the same directory as index.html)
+        const adhanUrls = {
+            'default': 'adhan1.mp3',  // Download from https://www.islamcan.com/audio/adhan/azan1.mp3 and rename
+            'bilal': 'adhan6.mp3',    // Download from https://www.islamcan.com/audio/adhan/azan6.mp3
+            'muezzin': 'adhan12.mp3'  // Download from https://www.islamcan.com/audio/adhan/azan12.mp3
+        };
+
+        // Default settings (unchanged)
+        let settings = {
+            city: 'Riyadh_Saudi Arabia',
+            country: 'Saudi Arabia',
+            method: 3,
+            language: 'ar',
+            adhan: 'default',
+            notificationTime: 2,
+            notificationsEnabled: false,
+            autoLocation: false,
+            latitude: null,
+            longitude: null
+        };
+
+        let prayerTimes = {};
+        let timeouts = [];
+        let currentLang = 'ar';
+
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(registration => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch(registrationError => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+
+        // Function to update UI based on language (unchanged, but added audio error update)
+        function updateUI(lang) {
+            const t = translations[lang];
+            document.title = t.title;
+            document.documentElement.lang = lang;
+            document.body.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('settingsTitle').textContent = t.settingsTitle;
+            document.getElementById('autoLocationLabel').textContent = t.autoLocationLabel;
+            document.getElementById('cityLabel').textContent = t.cityLabel;
+            document.getElementById('methodLabel').textContent = t.methodLabel;
+            document.getElementById('languageLabel').textContent = t.languageLabel;
+            document.getElementById('adhanLabel').textContent = t.adhanLabel;
+            document.getElementById('notificationTimeLabel').textContent = t.notificationTimeLabel;
+            document.getElementById('saveBtn').textContent = t.saveBtn;
+
+            // Update method options
+            const methodSelect = document.getElementById('method');
+            methodSelect.options[0].text = t.method0;
+            methodSelect.options[1].text = t.method1;
+            methodSelect.options[2].text = t.method2;
+            methodSelect.options[3].text = t.method3;
+            methodSelect.options[4].text = t.method4;
+            methodSelect.options[5].text = t.method5;
+            methodSelect.options[6].text = t.method6;
+            methodSelect.options[7].text = t.method7;
+            methodSelect.options[8].text = t.method8;
+            methodSelect.options[9].text = t.method9;
+            methodSelect.options[10].text = t.method10;
+            methodSelect.options[11].text = t.method11;
+            methodSelect.options[12].text = t.method12;
+            methodSelect.options[13].text = t.method13;
+            methodSelect.options[14].text = t.method14;
+            methodSelect.options[15].text = t.method15;
+
+            // Update adhan options
+            const adhanSelect = document.getElementById('adhan');
+            adhanSelect.options[0].text = t.adhanDefault;
+            adhanSelect.options[1].text = t.adhanBilal;
+            adhanSelect.options[2].text = t.adhanMuezzin;
+
+            // Update notification time options
+            const notifSelect = document.getElementById('notificationTime');
+            notifSelect.options[0].text = t.notif1;
+            notifSelect.options[1].text = t.notif2;
+            notifSelect.options[2].text = t.notif5;
+
+            // Update language options
+            const langSelect = document.getElementById('language');
+            langSelect.options[0].text = t.arLang;
+            langSelect.options[1].text = t.enLang;
+
+            // Update city groups and options (simplified for brevity, as before)
+            const cityOptions = document.querySelectorAll('#city option');
+            cityOptions.forEach(opt => {
+                if (lang === 'ar') {
+                    opt.text = opt.dataset.ar || opt.value.split('_')[0];
+                } else {
+                    opt.text = opt.dataset.en || opt.value.split('_')[0];
+                }
+            });
+
+            // Update prayer labels
+            document.getElementById('fajrLabel').textContent = t.fajr;
+            document.getElementById('dhuhrLabel').textContent = t.dhuhr;
+            document.getElementById('asrLabel').textContent = t.asr;
+            document.getElementById('maghribLabel').textContent = t.maghrib;
+            document.getElementById('ishaLabel').textContent = t.isha;
+
+            // Update button titles
+            document.getElementById('locationBtn').title = t.gpsTitle;
+            document.getElementById('ipLocationBtn').title = t.ipTitle;
+            document.getElementById('notificationToggle').title = t.notifTitle;
+            document.querySelector('.settings-btn').title = t.settingsTitleBtn;
+            document.getElementById('stopAdhanBtn').title = t.stopTitle;
+
+            updateLocationStatus();
+            if (Object.keys(prayerTimes).length > 0) {
+                updateSunriseSunset();
+            }
+            currentLang = lang;
+
+            // Update audio error message
+            const audioError = document.querySelector('#adhanAudio').textContent.trim();
+            if (audioError.includes('does not support')) {
+                document.querySelector('#adhanAudio').lastChild.textContent = t.audioError;
+            }
+        }
+
+        // Load settings (unchanged)
+        function loadSettings() {
+            const saved = localStorage.getItem('prayerSettings');
+            if (saved) {
+                settings = { ...settings, ...JSON.parse(saved) };
+            }
+            document.getElementById('city').value = settings.city;
+            document.getElementById('method').value = settings.method;
+            document.getElementById('language').value = settings.language;
+            document.getElementById('adhan').value = settings.adhan;
+            document.getElementById('notificationTime').value = settings.notificationTime;
+            document.getElementById('autoLocation').checked = settings.autoLocation;
+            updateCitySettings();
+            updateLocationStatus();
+            updateNotificationToggle();
+            updateUI(settings.language);
+            if (settings.notificationsEnabled) {
+                requestNotificationPermission();
+            }
+            fetchPrayerTimes();
+        }
+
+        // Other functions remain unchanged (updateCitySettings, saveSettings, toggleAutoLocation, updateLocationStatus, getCurrentLocation, getIPLocation, openSettings, closeSettings, changeLanguage, requestNotificationPermission, toggleNotifications, updateNotificationToggle, clearTimeouts, scheduleNotifications, showNotification, pauseAdhan, fetchPrayerTimes, updateSunriseSunset, fetchDates, updateCurrentTime)
+
+        function updateCitySettings() {
+            const selectedCity = document.getElementById('city').value;
+            if (citySettings[selectedCity]) {
+                settings.city = selectedCity;
+                settings.country = citySettings[selectedCity].country;
+                settings.method = citySettings[selectedCity].method;
+                document.getElementById('method').value = settings.method;
+            }
+        }
+
+        function saveSettings() {
+            settings.city = document.getElementById('city').value;
+            settings.method = parseInt(document.getElementById('method').value);
+            settings.language = document.getElementById('language').value;
+            settings.adhan = document.getElementById('adhan').value;
+            settings.notificationTime = parseInt(document.getElementById('notificationTime').value);
+            settings.autoLocation = document.getElementById('autoLocation').checked;
+            localStorage.setItem('prayerSettings', JSON.stringify(settings));
+            closeSettings();
+            updateLocationStatus();
+            updateUI(settings.language);
+            fetchPrayerTimes();
+        }
+
+        function toggleAutoLocation() {
+            settings.autoLocation = document.getElementById('autoLocation').checked;
+        }
+
+        function updateLocationStatus() {
+            const statusEl = document.getElementById('locationStatus');
+            const t = translations[currentLang];
+            let statusText;
+            if (settings.autoLocation && settings.latitude && settings.longitude) {
+                statusText = `${t.locationStatus}${settings.latitude.toFixed(4)}, ${settings.longitude.toFixed(4)}`;
+            } else {
+                const cityEl = document.querySelector(`#city option[value="${settings.city}"]`);
+                const cityName = currentLang === 'ar' ? cityEl.dataset.ar : cityEl.dataset.en;
+                statusText = `${t.locationStatus}${cityName || t.locationNotSet}`;
+            }
+            statusEl.textContent = statusText;
+        }
+
+        function getCurrentLocation() {
+            const btn = document.getElementById('locationBtn');
+            const t = translations[currentLang];
+            btn.disabled = true;
+            if (!navigator.geolocation) {
+                alert(t.gpsError);
+                btn.disabled = false;
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    settings.latitude = position.coords.latitude;
+                    settings.longitude = position.coords.longitude;
+                    settings.autoLocation = true;
+                    document.getElementById('autoLocation').checked = true;
+                    localStorage.setItem('prayerSettings', JSON.stringify(settings));
+                    fetchPrayerTimes();
+                    updateLocationStatus();
+                    btn.disabled = false;
+                },
+                (error) => {
+                    alert(t.gpsFail);
+                    btn.disabled = false;
+                },
+                { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+            );
+        }
+
+        async function getIPLocation() {
+            const btn = document.getElementById('ipLocationBtn');
+            const t = translations[currentLang];
+            btn.disabled = true;
+            try {
+                const response = await fetch('http://ip-api.com/json/?fields=lat,lon,status');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    settings.latitude = data.lat;
+                    settings.longitude = data.lon;
+                    settings.autoLocation = true;
+                    document.getElementById('autoLocation').checked = true;
+                    localStorage.setItem('prayerSettings', JSON.stringify(settings));
+                    fetchPrayerTimes();
+                    updateLocationStatus();
+                    btn.disabled = false;
+                } else {
+                    throw new Error(t.ipFail);
+                }
+            } catch (error) {
+                alert(t.ipError);
+                btn.disabled = false;
+            }
+        }
+
+        function openSettings() { document.getElementById('settingsModal').style.display = 'block'; }
+        function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+
+        function changeLanguage() {
+            const lang = document.getElementById('language').value;
+            settings.language = lang;
+            updateUI(lang);
+            localStorage.setItem('prayerSettings', JSON.stringify(settings));
+            console.log('Language changed to:', lang);
+        }
+
+        function requestNotificationPermission() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        settings.notificationsEnabled = true;
+                        localStorage.setItem('prayerSettings', JSON.stringify(settings));
+                        updateNotificationToggle();
+                        scheduleNotifications();
+                    }
+                });
+            }
+        }
+
+        function toggleNotifications() {
+            const t = translations[currentLang];
+            if (settings.notificationsEnabled) {
+                settings.notificationsEnabled = false;
+                clearTimeouts();
+            } else {
+                requestNotificationPermission();
+            }
+            localStorage.setItem('prayerSettings', JSON.stringify(settings));
+            updateNotificationToggle();
+        }
+
+        function updateNotificationToggle() {
+            const btn = document.getElementById('notificationToggle');
+            btn.disabled = !settings.notificationsEnabled;
+        }
+
+        function clearTimeouts() {
+            timeouts.forEach(clearTimeout);
+            timeouts = [];
+        }
+
+        function scheduleNotifications() {
+            clearTimeouts();
+            if (!settings.notificationsEnabled) return;
+            const now = new Date();
+            const prayers = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+            prayers.forEach(prayer => {
+                const timeStr = prayerTimes[prayer];
+                if (!timeStr) return;
+                const [h, m] = timeStr.split(':').map(Number);
+                let prayerTime = new Date(now);
+                prayerTime.setHours(h, m, 0, 0);
+                if (prayerTime < now) prayerTime.setDate(prayerTime.getDate() + 1);
+                let notifyTime = new Date(prayerTime);
+                notifyTime.setMinutes(notifyTime.getMinutes() - settings.notificationTime);
+                const diff = notifyTime - now;
+                if (diff > 0) {
+                    timeouts.push(setTimeout(() => {
+                        showNotification(prayer);
+                        playAdhan();
+                    }, diff));
+                }
+            });
+        }
+
+        function showNotification(prayer) {
+            const t = translations[currentLang];
+            if (Notification.permission === 'granted') {
+                new Notification('Prayer Time', {
+                    body: `${prayer} - ${t.notifMsg}`,
+                    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="%234CAF50"/></svg>'
+                });
+            }
+        }
+
+        function playAdhan() {
+            const audio = document.getElementById('adhanAudio');
+            const adhanType = settings.adhan;
+            const adhanUrl = adhanUrls[adhanType] || adhanUrls['default'];
+
+            // Update source to local file
+            audio.innerHTML = `<source src="${adhanUrl}" type="audio/mpeg">
+                               <source src="bell-ringing-05.wav" type="audio/wav">`;
+            audio.load();
+
+            audio.play().then(() => {
+                document.getElementById('stopAdhanBtn').classList.add('show');
+            }).catch(e => {
+                console.error('Error playing Adhan:', e);
+                // Fallback to local bell
+                audio.innerHTML = `<source src="bell-ringing-05.wav" type="audio/wav">`;
+                audio.load();
+                audio.play();
+            });
+        }
+
+        function pauseAdhan() {
+            const audio = document.getElementById('adhanAudio');
+            audio.pause();
+            document.getElementById('stopAdhanBtn').classList.remove('show');
+        }
+
+        async function fetchPrayerTimes() {
+            try {
+                let url;
+                const today = new Date();
+                const dateStr = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+                if (settings.autoLocation && settings.latitude && settings.longitude) {
+                    url = `https://api.aladhan.com/v1/timings/${dateStr}?latitude=${settings.latitude}&longitude=${settings.longitude}&method=${settings.method}`;
+                } else {
+                    const [city, country] = settings.city.split('_');
+                    url = `https://api.aladhan.com/v1/timingsByCity?city=${city}&country=${country}&method=${settings.method}`;
+                }
+                const res = await fetch(url);
+                const data = await res.json();
+                prayerTimes = data.data.timings;
+                document.getElementById('fajr').textContent = prayerTimes.Fajr;
+                document.getElementById('dhuhr').textContent = prayerTimes.Dhuhr;
+                document.getElementById('asr').textContent = prayerTimes.Asr;
+                document.getElementById('maghrib').textContent = prayerTimes.Maghrib;
+                document.getElementById('isha').textContent = prayerTimes.Isha;
+                updateSunriseSunset();
+                scheduleNotifications();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function updateSunriseSunset() {
+            const t = translations[currentLang];
+            document.getElementById('sunrise').innerHTML = `${t.sunrise}${prayerTimes.Sunrise}`;
+            document.getElementById('sunset').innerHTML = `${t.sunset}${prayerTimes.Maghrib}`;
+        }
+
+        async function fetchDates() {
+            const today = new Date();
+            const t = translations[currentLang];
+            const dateStr = `${today.getDate()}-${today.getMonth() + 1}-${today.getFullYear()}`;
+            const gregorianEl = document.getElementById('gregorian');
+            gregorianEl.textContent = currentLang === 'ar' ? today.toLocaleDateString('ar-SA') : today.toLocaleDateString('en-US');
+            try {
+                const res = await fetch(`https://api.aladhan.com/v1/gToH?date=${dateStr}`);
+                const data = await res.json();
+                const hijriText = currentLang === 'ar' 
+                    ? `${data.data.hijri.day} ${data.data.hijri.month.ar} ${data.data.hijri.year} هـ`
+                    : `${data.data.hijri.day} ${data.data.hijri.month.en} ${data.data.hijri.year} AH`;
+                document.getElementById('hijri').textContent = hijriText;
+            } catch (e) {
+                document.getElementById('hijri').textContent = currentLang === 'ar' ? 'غير متوفر' : 'Not available';
+            }
+        }
+
+        function updateCurrentTime() {
+            const t = translations[currentLang];
+            document.getElementById('currentTime').textContent = new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-SA' : 'en-US');
+        }
+
+        // Init
+        loadSettings();
+        fetchDates();
+        fetchPrayerTimes();
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+        setInterval(() => { fetchPrayerTimes(); fetchDates(); }, 60000);
+
+        // Close modal
+        window.onclick = (e) => {
+            if (e.target.id === 'settingsModal') closeSettings();
+        };
+    </script>
+</body>
+</html>
